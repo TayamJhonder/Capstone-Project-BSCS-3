@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamChecker — Automated Examination System</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <h1>ExamChecker</h1>
+    <p class="muted">Automated Examination Checking System</p>
+
+    <div class="role-selector" id="roleSelector">
+      <button type="button" class="role-btn active" data-role="instructor">Instructor</button>
+      <button type="button" class="role-btn" data-role="student">Student</button>
+    </div>
+
+    <div id="loginPanel" class="auth-panel">
+      <form id="loginForm" novalidate>
+        <label for="loginId">Email or Username</label>
+        <input id="loginId" type="text" placeholder="Enter email or username" autocomplete="username" required aria-describedby="loginIdError">
+        <p id="loginIdError" class="field-error" role="alert"></p>
+
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Enter password" autocomplete="current-password" minlength="6" required aria-describedby="passwordError">
+        <p id="passwordError" class="field-error" role="alert"></p>
+
+        <p id="loginError" class="field-error" role="alert"></p>
+        <button class="primary full" type="submit" id="loginSubmitBtn">Sign In</button>
+      </form>
+
+      <div class="divider"><span>or</span></div>
+
+      <button type="button" class="gmail-btn full" id="gmailLoginBtn">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Continue with Gmail
+      </button>
+
+      <button type="button" id="showSignupBtn" class="text-btn full">Need an account? Sign Up</button>
+    </div>
+
+    <div id="signupPanel" class="auth-panel hidden">
+      <form id="signupForm" novalidate>
+        <label for="signupFullName">Full Name</label>
+        <input id="signupFullName" type="text" placeholder="Enter full name" autocomplete="name" required aria-describedby="signupFullNameError">
+        <p id="signupFullNameError" class="field-error" role="alert"></p>
+
+        <label for="signupUsername">Username</label>
+        <input id="signupUsername" type="text" placeholder="Choose a username" autocomplete="username" required minlength="3" aria-describedby="signupUsernameError">
+        <p id="signupUsernameError" class="field-error" role="alert"></p>
+
+        <label for="signupEmail">Email</label>
+        <input id="signupEmail" type="email" placeholder="Enter email address" autocomplete="email" required aria-describedby="signupEmailError">
+        <p id="signupEmailError" class="field-error" role="alert"></p>
+
+        <label for="signupPassword">Password</label>
+        <input id="signupPassword" type="password" placeholder="Create password" minlength="6" autocomplete="new-password" required aria-describedby="signupPasswordError">
+        <p id="signupPasswordError" class="field-error" role="alert"></p>
+
+        <label for="confirmPassword">Confirm Password</label>
+        <input id="confirmPassword" type="password" placeholder="Confirm password" minlength="6" autocomplete="new-password" required aria-describedby="confirmPasswordError">
+        <p id="confirmPasswordError" class="field-error" role="alert"></p>
+
+        <p id="signupError" class="field-error" role="alert"></p>
+        <button class="primary full" type="submit">Create Account</button>
+      </form>
+      <button type="button" id="showLoginBtn" class="text-btn full">Already have an account? Sign In</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="logo"><strong>ExamChecker</strong><small id="sidebarRole">Instructor Portal</small></div>
+      <button class="burger-btn" id="burgerBtn" type="button" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <nav id="sidebarNav"></nav>
+
+    <button id="logout" class="logout">Log out</button>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="burger-btn main-burger" id="mainBurgerBtn" type="button" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-title">
+        <h2 id="pageTitle">Dashboard</h2>
+        <p id="pageSubtitle">Welcome back.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <span class="theme-icon sun">☀</span>
+          <span class="theme-icon moon">☾</span>
+        </button>
+        <div class="topbar-avatar" id="topbarUserPill" title="Click to change photo">
+          <img id="topbarAvatarImg" alt="Profile" class="topbar-avatar-img hidden">
+          <span id="topbarAvatarInitials" class="topbar-avatar-initials">JD</span>
+          <span class="avatar-edit-overlay">Edit</span>
+          <input id="topbarAvatarInput" type="file" accept="image/*" hidden>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== INSTRUCTOR: DASHBOARD ===== -->
+    <section id="dashboard" class="page">
+      <div class="hero">
+        <div>
+          <span class="eyebrow">AUTOMATED GRADING</span>
+          <h1>Check exams faster.</h1>
+          <p>Upload or photograph a student's test paper, compare it with an answer key, and record the result automatically.</p>
+          <button class="primary" onclick="showPage('checking')">Start Exam Checking</button>
+        </div>
+        <div class="hero-icon">✓</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span>Total Subjects</span><strong>4</strong><small>Active subjects</small></div>
+        <div class="stat"><span>Exams Checked</span><strong>128</strong><small>This academic year</small></div>
+        <div class="stat"><span>Students Graded</span><strong>96</strong><small>Across all subjects</small></div>
+        <div class="stat"><span>Average Score</span><strong>84.6%</strong><small>All recorded exams</small></div>
+      </div>
+
+      <div class="grid two">
+        <div class="panel">
+          <div class="panel-head"><h3>Recent Grades</h3><button class="text-btn" onclick="showPage('grades')">View all</button></div>
+          <table>
+            <thead><tr><th>Student</th><th>Subject</th><th>Score</th></tr></thead>
+            <tbody>
+              <tr><td>Maria Santos</td><td>Programming 1</td><td><span class="badge good">92%</span></td></tr>
+              <tr><td>Carlo Reyes</td><td>Programming 1</td><td><span class="badge good">88%</span></td></tr>
+              <tr><td>Anna Cruz</td><td>Database Systems</td><td><span class="badge average">78%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>How it works</h3></div>
+          <div class="steps">
+            <div><b>1</b><span><strong>Upload answer key</strong><small>Set the correct answers for the exam.</small></span></div>
+            <div><b>2</b><span><strong>Capture student's paper</strong><small>Upload a clear photo of the test paper.</small></span></div>
+            <div><b>3</b><span><strong>Review and record</strong><small>Confirm the detected score before saving.</small></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== INSTRUCTOR: EXAM CHECKING ===== -->
+    <section id="checking" class="page hidden">
+      <div class="section-intro"><div><h1>Exam Checking</h1><p>Process a student's photographed answer sheet.</p></div></div>
+      <div class="grid two">
+        <div class="panel">
+          <h3>1. Exam Information</h3>
+          <label>Subject</label>
+          <select id="subjectSelect"><option>Programming 1</option><option>Database Systems</option><option>Web Development</option><option>Computer Networks</option></select>
+          <label>Exam</label>
+          <select id="examSelect"><option>Midterm Examination</option><option>Final Examination</option><option>Quiz 3</option></select>
+          <label>Student Name</label>
+          <input id="studentName" placeholder="e.g. Maria Santos">
+          <label>Answer Key</label>
+          <div class="answer-key">
+            <div><span>1</span><b>A</b></div><div><span>2</span><b>C</b></div><div><span>3</span><b>B</b></div><div><span>4</span><b>D</b></div><div><span>5</span><b>A</b></div>
+            <div><span>6</span><b>B</b></div><div><span>7</span><b>D</b></div><div><span>8</span><b>C</b></div><div><span>9</span><b>A</b></div><div><span>10</span><b>B</b></div>
+          </div>
+          <button class="secondary" onclick="alert('Answer-key editor coming soon.')">Edit Answer Key</button>
+        </div>
+
+        <div class="panel">
+          <h3>2. Student Exam Photo</h3>
+          <div id="dropZone" class="drop-zone">
+            <div class="camera">▧</div>
+            <strong>Upload or take a photo</strong>
+            <p>JPG, PNG or WEBP</p>
+            <input id="examImage" type="file" accept="image/*" capture="environment">
+            <label for="examImage" class="primary upload-btn">Choose Exam Photo</label>
+          </div>
+          <div id="previewWrap" class="preview hidden">
+            <img id="preview" alt="Exam preview">
+            <button class="secondary" onclick="clearPhoto()">Remove Photo</button>
+          </div>
+          <button id="processBtn" class="primary full process-btn" onclick="processExam()">Process & Check Exam</button>
+        </div>
+      </div>
+
+      <div id="resultPanel" class="panel result hidden">
+        <div class="result-header"><div><span class="eyebrow">CHECKING COMPLETE</span><h2>Result ready for instructor review</h2></div><div class="score">9<span>/10</span><small>90%</small></div></div>
+        <div class="result-grid">
+          <div><span>Student</span><strong id="resultStudent">Maria Santos</strong></div>
+          <div><span>Subject</span><strong id="resultSubject">Programming 1</strong></div>
+          <div><span>Exam</span><strong id="resultExam">Midterm Examination</strong></div>
+          <div><span>AI/OCR confidence</span><strong>94%</strong></div>
+        </div>
+        <div class="notice" id="resultNotice">The system detected the marked answers and compared them with the uploaded answer key. Instructor confirmation is required before saving.</div>
+        <button class="primary" onclick="saveGrade()">Confirm & Save Grade</button>
+        <button class="secondary" onclick="alert('Review mode coming soon.')">Review Answers</button>
+      </div>
+    </section>
+
+    <!-- ===== INSTRUCTOR: SUBJECTS ===== -->
+    <section id="subjects" class="page hidden">
+      <div class="section-intro"><div><h1>Subjects</h1><p>Manage subjects and their examinations.</p></div><button class="primary" onclick="alert('Add Subject form')">+ Add Subject</button></div>
+      <div class="subject-grid">
+        <div class="subject-card"><span>CS101</span><h3>Programming 1</h3><p>4 examinations • 32 students</p><button onclick="showPage('checking')">Check Exam</button></div>
+        <div class="subject-card"><span>IT204</span><h3>Database Systems</h3><p>3 examinations • 28 students</p><button onclick="showPage('checking')">Check Exam</button></div>
+        <div class="subject-card"><span>IT301</span><h3>Web Development</h3><p>5 examinations • 24 students</p><button onclick="showPage('checking')">Check Exam</button></div>
+        <div class="subject-card"><span>IT305</span><h3>Computer Networks</h3><p>2 examinations • 18 students</p><button onclick="showPage('checking')">Check Exam</button></div>
+      </div>
+    </section>
+
+    <!-- ===== INSTRUCTOR: GRADES ===== -->
+    <section id="grades" class="page hidden">
+      <div class="section-intro"><div><h1>Grades Record</h1><p>View and manage automatically recorded grades.</p></div><button class="secondary" onclick="alert('CSV export coming soon.')">Export Grades</button></div>
+      <div class="panel">
+        <div class="filters"><input placeholder="Search student..."><select><option>All Subjects</option><option>Programming 1</option><option>Database Systems</option></select><select><option>All Exams</option><option>Midterm</option><option>Final</option></select></div>
+        <table class="large-table">
+          <thead><tr><th>Student</th><th>Student ID</th><th>Subject</th><th>Exam</th><th>Score</th><th>Percentage</th><th>Date</th></tr></thead>
+          <tbody id="gradeRows">
+            <tr><td>Maria Santos</td><td>2026-001</td><td>Programming 1</td><td>Midterm</td><td>46/50</td><td><span class="badge good">92%</span></td><td>Aug 26, 2026</td></tr>
+            <tr><td>Carlo Reyes</td><td>2026-014</td><td>Programming 1</td><td>Midterm</td><td>44/50</td><td><span class="badge good">88%</span></td><td>Aug 26, 2026</td></tr>
+            <tr><td>Anna Cruz</td><td>2026-022</td><td>Database Systems</td><td>Quiz 3</td><td>39/50</td><td><span class="badge average">78%</span></td><td>Aug 25, 2026</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== INSTRUCTOR: STUDENTS LIST ===== -->
+    <section id="studentsList" class="page hidden">
+      <div class="section-intro">
+        <div>
+          <h1>Students</h1>
+          <p>Click a student to view their profile and exam results.</p>
+        </div>
+        <input id="studentSearch" placeholder="Search student..." class="search-input">
+      </div>
+      <div class="panel">
+        <table class="large-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Student ID</th>
+              <th>Course</th>
+              <th>Year Level</th>
+              <th>Exam Score</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== INSTRUCTOR: PROFILE ===== -->
+    <section id="profile" class="page hidden">
+      <div class="section-intro">
+        <div>
+          <h1>Instructor Profile</h1>
+          <p>Your account information at AI Performance Analytics.</p>
+        </div>
+      </div>
+
+      <div class="panel profile-card">
+        <div>
+          <h2 id="profileName">Juan Dela Cruz</h2>
+          <p id="profileRole">Instructor • College of Information Technology</p>
+          <div class="profile-details">
+            <span id="profileEmail"><b>Email</b> juan.delacruz@school.edu</span>
+            <span id="profileEmployeeId"><b>Employee ID</b> INS-2026-014</span>
+            <span id="profileDepartment"><b>Department</b> Information Technology</span>
+            <span><b>Account Role</b> Instructor</span>
+            <span><b>Institutional Affiliation</b> College of Information Technology</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid two" style="margin-top:20px;">
+        <div class="panel">
+          <h3>AI Performance Analytics</h3>
+          <p style="color:#7d8799;font-size:13px;margin-top:0;">Analysis ng AI sa mga nakalipas na exam.</p>
+          <div class="analytics-list">
+            <div><b>Grade Trends</b><small>Interactive graphs ng scores sa paglipas ng panahon</small></div>
+            <div><b>Skill & Topic Mastery</b><small>Pagsusuri ng AI sa strengths at weaknesses</small></div>
+            <div><b>Predictive Analytics</b><small>Hula ng AI sa susunod na performance</small></div>
+            <div><b>Time-per-Question</b><small>Data kung gaano katagal sinagutan ang bawat tanong</small></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Exam History & Repository</h3>
+          <p style="color:#7d8799;font-size:13px;margin-top:0;">Imbakan ng lahat ng exam data.</p>
+          <div class="analytics-list">
+            <div><b>Completed Exams Logs</b><small>Listahan ng lahat ng natapos na exam</small></div>
+            <div><b>Automated Feedback</b><small>Paliwanag ng AI kung bakit tama o mali ang sagot</small></div>
+            <div><b>Exam Creation & Question Bank</b><small>Listahan ng test questionnaires at AI-generated questions</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid two" style="margin-top:20px;">
+        <div class="panel">
+          <h3>AI Security & Integrity Profiles</h3>
+          <p style="color:#7d8799;font-size:13px;margin-top:0;">Security at proctoring logs ng AI.</p>
+          <div class="analytics-list">
+            <div><b>Biometric Identity Profile</b><small>Facial recognition at boses verification</small></div>
+            <div><b>AI Proctoring Flag Logs</b><small>Red flags na nahuli ng AI camera</small></div>
+            <div><b>Browser & Device Lock History</b><small>Record ng tab switching at copy-paste attempts</small></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>System Settings & Access Controls</h3>
+          <p style="color:#7d8799;font-size:13px;margin-top:0;">Back-end na settings depende sa access level.</p>
+          <div class="analytics-list">
+            <div><b>Integration Keys</b><small>Koneksyon sa Canvas, Moodle, Google Classroom</small></div>
+            <div><b>AI Customization Settings</b><small>Strictness level ng AI grading</small></div>
+            <div><b>Subscription & License Status</b><small>Free, premium, o institutional license</small></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== INSTRUCTOR: PROFILE SETTINGS ===== -->
+    <section id="settings" class="page hidden">
+      <div class="section-intro"><div><h1>Profile Settings</h1><p>Update your account preferences.</p></div></div>
+      <div class="panel settings-form">
+        <h3 style="margin-top:0;">1. Personal Details</h3>
+        <label for="settingsFullName">Full Name</label>
+        <input id="settingsFullName" type="text" placeholder="Full Name">
+        <p id="settingsFullNameError" class="field-error" role="alert"></p>
+
+        <label for="settingsEmail">Email</label>
+        <input id="settingsEmail" type="email" placeholder="Email">
+        <p id="settingsEmailError" class="field-error" role="alert"></p>
+
+        <label for="settingsContact">Contact Number</label>
+        <input id="settingsContact" type="tel" placeholder="+63 9XX XXX XXXX">
+
+        <h3 style="margin-top:24px;">2. Account Credentials</h3>
+        <label for="settingsUsername">Username</label>
+        <input id="settingsUsername" type="text" placeholder="Username">
+
+        <label for="settingsEmployeeId">Employee ID / Student ID</label>
+        <input id="settingsEmployeeId" type="text" placeholder="INS-2026-014">
+
+        <label for="settingsAccountRole">Account Role</label>
+        <select id="settingsAccountRole">
+          <option value="Instructor">Instructor</option>
+          <option value="Admin">Admin</option>
+          <option value="Guro">Guro</option>
+          <option value="Proctore">Proctore</option>
+        </select>
+
+        <h3 style="margin-top:24px;">3. Institutional Affiliation</h3>
+        <label for="settingsDepartment">Department</label>
+        <input id="settingsDepartment" type="text" placeholder="Information Technology">
+
+        <label for="settingsCourse">Course / Strand</label>
+        <input id="settingsCourse" type="text" placeholder="BS Computer Science">
+
+        <label for="settingsSection">Baitang / Seksyon</label>
+        <input id="settingsSection" type="text" placeholder="3rd Year - Section A">
+
+        <h3 style="margin-top:24px;">4. System Settings</h3>
+        <label for="settingsLMS">LMS Integration Key</label>
+        <input id="settingsLMS" type="text" placeholder="Canvas / Moodle / Google Classroom">
+
+        <label for="settingsAIStrictness">AI Grading Strictness</label>
+        <select id="settingsAIStrictness">
+          <option value="lenient">Lenient</option>
+          <option value="balanced" selected>Balanced</option>
+          <option value="strict">Strict</option>
+        </select>
+
+        <label for="settingsNotification">Notification Preference</label>
+        <select id="settingsNotification">
+          <option value="all">Show notifications</option>
+          <option value="important">Only important notifications</option>
+          <option value="none">Disable notifications</option>
+        </select>
+
+        <button class="primary" id="saveSettingsBtn" type="button">Save Changes</button>
+        <p id="settingsSavedMsg" class="field-error" style="color:#14834e;font-weight:700;" role="status"></p>
+      </div>
+    </section>
+
+    <!-- ===== STUDENT: DASHBOARD ===== -->
+    <section id="studentDashboard" class="page hidden">
+      <div class="hero student-hero">
+        <div>
+          <span class="eyebrow">STUDENT PORTAL</span>
+          <h1 id="studentWelcomeName">Welcome!</h1>
+          <p>View your exam results, track your progress, and manage your student profile.</p>
+          <button class="primary" onclick="showPage('studentProfile')">View My Profile</button>
+        </div>
+        <div class="hero-icon">✓</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span>Exams Taken</span><strong id="studentExamsTaken">0</strong><small>This semester</small></div>
+        <div class="stat"><span>Average Score</span><strong id="studentAvgScore">0%</strong><small>Across all exams</small></div>
+        <div class="stat"><span>Highest Score</span><strong id="studentHighestScore">0%</strong><small>Best performance</small></div>
+        <div class="stat"><span>Subjects</span><strong id="studentSubjectCount">0</strong><small>Enrolled</small></div>
+      </div>
+
+      <div class="grid two">
+        <div class="panel">
+          <div class="panel-head"><h3>My Recent Exam Results</h3><button class="text-btn" onclick="showPage('studentGrades')">View all</button></div>
+          <table>
+            <thead><tr><th>Subject</th><th>Exam</th><th>Score</th></tr></thead>
+            <tbody id="studentRecentGrades">
+              <tr><td colspan="3" class="empty-row">No exams taken yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>My Progress</h3></div>
+          <div class="steps">
+            <div><b>1</b><span><strong>Take your first exam</strong><small>Your progress will appear here.</small></span></div>
+            <div><b>2</b><span><strong>Track your scores</strong><small>See how you improve over time.</small></span></div>
+            <div><b>3</b><span><strong>Review weak areas</strong><small>Focus on subjects that need work.</small></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STUDENT: MY GRADES ===== -->
+    <section id="studentGrades" class="page hidden">
+      <div class="section-intro">
+        <div>
+          <h1>My Grades</h1>
+          <p>All your recorded exam results.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <table class="large-table">
+          <thead>
+            <tr><th>Subject</th><th>Exam</th><th>Score</th><th>Percentage</th><th>Date</th></tr>
+          </thead>
+          <tbody id="studentGradeRows">
+            <tr><td colspan="5" class="empty-row">No exam results yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== STUDENT: MY PROFILE (may Student I.D. dito) ===== -->
+    <section id="studentProfile" class="page hidden">
+      <div class="section-intro">
+        <div>
+          <h1>My Profile</h1>
+          <p>View and manage your student information.</p>
+        </div>
+        <button class="primary" id="editProfileBtn" type="button">Edit Profile</button>
+      </div>
+
+      <div class="panel profile-card" id="studentProfileView">
+        <div>
+          <h2 id="studentFullName">Student Name</h2>
+          <p id="studentCourseYear">Course • Year Level</p>
+          <div class="profile-details">
+            <span><b>Student ID</b> <span id="studentIdDisplay">—</span></span>
+            <span><b>Course</b> <span id="studentCourseDisplay">—</span></span>
+            <span><b>Year Level</b> <span id="studentYearDisplay">—</span></span>
+            <span><b>School</b> Computer Communication Development Institute</span>
+            <span><b>Location</b> Sorsogon City</span>
+            <span><b>S.Y.</b> 2026-2027</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel settings-form hidden" id="studentEditForm">
+        <h3>Edit Student Information</h3>
+
+        <label for="editSurname">Surname</label>
+        <input id="editSurname" type="text" placeholder="Surname">
+
+        <label for="editFirstName">First Name</label>
+        <input id="editFirstName" type="text" placeholder="First Name">
+
+        <label for="editMiddleInitial">Middle Initial</label>
+        <input id="editMiddleInitial" type="text" placeholder="M" maxlength="3">
+
+        <label for="editSuffix">Suffix Name</label>
+        <input id="editSuffix" type="text" placeholder="Jr., Sr., III">
+
+        <label for="editCourse">Course</label>
+        <input id="editCourse" type="text" placeholder="BS Computer Science">
+
+        <label for="editYearLevel">Year Level</label>
+        <select id="editYearLevel">
+          <option value="1st Year">1st Year</option>
+          <option value="2nd Year">2nd Year</option>
+          <option value="3rd Year">3rd Year</option>
+          <option value="4th Year">4th Year</option>
+        </select>
+
+        <label for="editIdNumber">Student I.D. Number</label>
+        <input id="editIdNumber" type="text" placeholder="2026-001">
+
+        <label for="editSchoolYear">S.Y.</label>
+        <input id="editSchoolYear" type="text" placeholder="2026-2027">
+
+        <button class="primary" id="saveStudentProfileBtn" type="button">Save Changes</button>
+        <button class="secondary" id="cancelStudentEditBtn" type="button">Cancel</button>
+        <p id="studentSaveMsg" class="field-error" style="color:#14834e;font-weight:700;" role="status"></p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="studentModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <button class="modal-close" id="closeStudentModal" type="button">Close</button>
+    <div class="modal-profile-head">
+      <div class="big-avatar" id="modalAvatar">ST</div>
+      <div>
+        <h2 id="modalName">Student Name</h2>
+        <p id="modalCourseYear">Course • Year Level</p>
+      </div>
+    </div>
+    <div class="profile-details modal-details">
+      <span><b>Student ID</b> <span id="modalId">—</span></span>
+      <span><b>Surname</b> <span id="modalSurname">—</span></span>
+      <span><b>First Name</b> <span id="modalFirstName">—</span></span>
+      <span><b>Middle Initial</b> <span id="modalMI">—</span></span>
+      <span><b>Suffix</b> <span id="modalSuffix">—</span></span>
+      <span><b>Course</b> <span id="modalCourse">—</span></span>
+      <span><b>Year Level</b> <span id="modalYear">—</span></span>
+      <span><b>School</b> Computer Communication Development Institute</span>
+      <span><b>Location</b> Sorsogon City</span>
+      <span><b>S.Y.</b> <span id="modalSY">2026-2027</span></span>
+    </div>
+
+    <h3 class="modal-section-title">Exam Results</h3>
+    <table class="large-table modal-exam-table">
+      <thead>
+        <tr><th>Subject</th><th>Exam</th><th>Score</th><th>Percentage</th><th>Date</th></tr>
+      </thead>
+      <tbody id="modalExamRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
