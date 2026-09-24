@@ -464,7 +464,10 @@ function setAuthMode(mode){
 document.getElementById("showSignupBtn").addEventListener("click", () => setAuthMode("signup"));
 document.getElementById("showLoginBtn").addEventListener("click", () => setAuthMode("login"));
 
-loginForm.addEventListener("submit", e => {
+/* ============================================
+   LOGIN — API-BACKED
+   ============================================ */
+loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const enteredId = loginIdInput.value.trim();
@@ -479,34 +482,53 @@ loginForm.addEventListener("submit", e => {
 
   if (!idValid || !passwordValid) return;
 
-  const matched = getStoredUsers().find(u =>
-    (u.email.toLowerCase() === enteredId.toLowerCase() ||
-     (u.username && u.username.toLowerCase() === enteredId.toLowerCase())) &&
-    (u.role || "instructor") === currentRole
-  );
+  const submitBtn = document.getElementById("loginSubmitBtn");
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Signing in...";
 
-  if (!matched){
-    loginError.textContent = "Account not found. Please sign up first or check your credentials.";
-    return;
+  try {
+    const result = await API.Auth.login(enteredId, enteredPassword, currentRole);
+
+    const user = {
+      id: result.user.id,
+      fullName: result.user.full_name,
+      username: result.user.username,
+      email: result.user.email,
+      role: result.user.role
+    };
+
+    enterApp(user);
+  } catch (error) {
+    console.error("Login error:", error);
+    loginError.textContent = error.message || "Login failed. Please check your credentials.";
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
   }
-
-  if (matched.password !== enteredPassword){
-    loginError.textContent = "Incorrect password.";
-    return;
-  }
-
-  const user = {
-    id: matched.id,
-    fullName: matched.fullName,
-    username: matched.username,
-    email: matched.email,
-    role: currentRole
-  };
-  setCurrentUser(user);
-  enterApp(user);
 });
 
 function enterApp(user){
+  // Save user info to localStorage for UI
+  if (typeof setAuthUser === "function") {
+    setAuthUser({
+      id: user.id,
+      full_name: user.fullName,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
+  }
+
+  // Keep legacy KEYS.current for backward compatibility
+  setCurrentUser({
+    id: user.id,
+    fullName: user.fullName,
+    username: user.username,
+    email: user.email,
+    role: user.role
+  });
+
   updateUserHeader(user);
   renderNav(user.role || "instructor");
   document.getElementById("loginScreen").classList.add("hidden");
@@ -516,7 +538,10 @@ function enterApp(user){
   showPage(firstPage);
 }
 
-signupForm.addEventListener("submit", e => {
+/* ============================================
+   SIGNUP — API-BACKED
+   ============================================ */
+signupForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const fullName = document.getElementById("signupFullName");
@@ -541,40 +566,35 @@ signupForm.addEventListener("submit", e => {
 
   if (!nameValid || !usernameValid || !emailValid || !passwordValid || !confirmValid) return;
 
-  const users = getStoredUsers();
-  const emailLower = signupEmail.value.trim().toLowerCase();
-  const usernameLower = username.value.trim().toLowerCase();
+  const submitBtn = signupForm.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Creating account...";
 
-  const existing = users.find(u =>
-    u.email.toLowerCase() === emailLower ||
-    (u.username && u.username.toLowerCase() === usernameLower)
-  );
+  try {
+    await API.Auth.signup(
+      fullName.value.trim(),
+      username.value.trim(),
+      signupEmail.value.trim(),
+      signupPassword.value,
+      currentRole
+    );
 
-  if (existing){
-    signupError.textContent = "An account with this email or username already exists.";
-    return;
+    document.getElementById("signupSuccess").textContent = "Account created successfully!";
+    signupForm.reset();
+
+    setTimeout(() => {
+      setAuthMode("login");
+      loginIdInput.value = username.value.trim() || "";
+      document.getElementById("loginSuccess").textContent = "Account created. Please sign in.";
+    }, 1200);
+  } catch (error) {
+    console.error("Signup error:", error);
+    signupError.textContent = error.message || "Signup failed. Please try again.";
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
   }
-
-  const newUser = {
-    id: Date.now().toString(),
-    fullName: fullName.value.trim(),
-    username: username.value.trim(),
-    email: signupEmail.value.trim(),
-    password: signupPassword.value,
-    role: currentRole
-  };
-
-  users.push(newUser);
-  saveStoredUsers(users);
-
-  document.getElementById("signupSuccess").textContent = "Account created successfully. Please sign in.";
-  signupForm.reset();
-
-  setTimeout(() => {
-    setAuthMode("login");
-    loginIdInput.value = newUser.username;
-    document.getElementById("loginSuccess").textContent = "Account created. Please enter your password to sign in.";
-  }, 1200);
 });
 
 loginIdInput.addEventListener("input", () => {
@@ -603,8 +623,17 @@ document.getElementById("gmailLoginBtn").addEventListener("click", () => {
   enterApp(user);
 });
 
+/* ============================================
+   LOGOUT — API-AWARE
+   ============================================ */
 document.getElementById("logout").addEventListener("click", () => {
+  if (typeof API !== "undefined" && API.Auth && API.Auth.logout) {
+    API.Auth.logout();
+  }
   clearCurrentUser();
+  localStorage.removeItem("examchecker_token");
+  localStorage.removeItem("examchecker_user");
+
   document.getElementById("app").classList.add("hidden");
   document.getElementById("loginScreen").classList.remove("hidden");
   loginIdInput.value = "";
@@ -1981,7 +2010,7 @@ function loadProfilePage(){
 }
 
 /* ============================================
-   INIT
+   INIT — API-BACKED AUTO-LOGIN
    ============================================ */
 document.addEventListener("DOMContentLoaded", () => {
   updateLoginUI();
@@ -2013,8 +2042,20 @@ document.addEventListener("DOMContentLoaded", () => {
   populateSubjectDropdowns();
   populateExamDropdowns();
 
-  const user = getCurrentUser();
-  if (user && user.role){
+  // ✅ Auto-login kung may valid token pa
+  const token = (typeof API !== "undefined" && API.getToken) ? API.getToken() : null;
+  const authUser = (typeof API !== "undefined" && API.getAuthUser) ? API.getAuthUser() : null;
+
+  if (token && authUser) {
+    const user = {
+      id: authUser.id,
+      fullName: authUser.full_name,
+      username: authUser.username,
+      email: authUser.email,
+      role: authUser.role
+    };
+
+    setCurrentUser(user);
     updateUserHeader(user);
     renderNav(user.role);
     document.getElementById("loginScreen").classList.add("hidden");
